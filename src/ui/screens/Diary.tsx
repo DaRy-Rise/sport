@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { patchDay } from '../../db/days'
 import { addBatchEntry, addFoodEntry, addTemplateEntry, updateEntryGrams } from '../../db/repo'
 import { suggestSaltyEvening } from '../../domain/checkin'
@@ -10,7 +11,8 @@ import {
 import { applyEdits, effectivePer100, foodLabel, itemsTotals, templateItems, type FoodsById } from '../../domain/library'
 import { NUTRIENT_INFO, scale, sumParts } from '../../domain/nutrients'
 import type { MealSlot, PortionItem } from '../../domain/types'
-import { Bar, Card, ConfirmButton, DateNav, Dialog, Field, NumberInput, Segmented, fmt } from '../components'
+import { Bar, Card, CategoryTitle, ConfirmButton, DateNav, Dialog, Field, NumberInput, Segmented, fmt } from '../components'
+import { Icons } from '../icons'
 import { db, useCore, useDateParam, useFoodsMap, usePlan } from '../data'
 import { FoodPicker, type Picked } from '../FoodPicker'
 import { Summary } from '../Summary'
@@ -189,8 +191,11 @@ export function DiaryScreen() {
 
   return (
     <div>
-      <div className="row spread">
+      <div className="screen-head">
         <h1>Дневник</h1>
+        <Link className="btn small" to="/foods">Продукты</Link>
+      </div>
+      <div className="toolbar-row">
         <DateNav date={date} onChange={setDate} addDays={addDays} label={`${formatDate(date, true)} · ${DAY_TYPE_LABEL[plan.dayType]}`} />
       </div>
       <div className="grid two">
@@ -209,12 +214,16 @@ export function DiaryScreen() {
                 )}
                 <div className="list">
                   {es.map((e) => (
-                    <div key={e.id} className="item row spread">
-                      <span style={{ flex: 1 }}>{e.label}</span>
-                      <NumberInput className="short" value={Math.round(e.grams)} ariaLabel="граммы" onChange={(v) => v && v > 0 && updateEntryGrams(db, e.id!, v)} />
-                      <span className="muted small">г</span>
-                      <span className="small nowrap" style={{ width: '4.5rem', textAlign: 'right' }}>{fmt(e.comp.kcal?.v)} ккал</span>
-                      <ConfirmButton label="✕" confirmLabel="удалить?" onConfirm={() => db.diary.delete(e.id!)} />
+                    <div key={e.id} className="item entry">
+                      <span className="entry-main">
+                        <span className="entry-name">{e.label}</span>
+                        <span className="muted small">{fmt(e.comp.kcal?.v)} ккал</span>
+                      </span>
+                      <span className="entry-grams">
+                        <NumberInput className="short" value={Math.round(e.grams)} ariaLabel="граммы" onChange={(v) => v && v > 0 && updateEntryGrams(db, e.id!, v)} />
+                        <span className="muted small">г</span>
+                      </span>
+                      <ConfirmButton className="btn small danger delete" label="✕" confirmLabel="удалить?" onConfirm={() => db.diary.delete(e.id!)} />
                     </div>
                   ))}
                 </div>
@@ -223,7 +232,7 @@ export function DiaryScreen() {
           })}
         </div>
         <div>
-          <Card title="Итоги дня">
+          <Card title={<CategoryTitle icon={Icons.foods} color="var(--ring-move)">Итоги дня</CategoryTitle>}>
             <Summary t={data.totals} />
             <p className="small muted" style={{ marginTop: '0.4rem' }}>
               Цель: {plan.macros.kcal} ккал · Б {plan.macros.protein} · Ж ≥{plan.macros.fat} · У {plan.macros.carbs} · клетчатка 25-30 г

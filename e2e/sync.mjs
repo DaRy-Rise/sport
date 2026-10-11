@@ -77,7 +77,6 @@ await phone.getByLabel('Отбой').fill('23:20')
 await phone.getByLabel('Подъём', { exact: true }).fill('07:40')
 await phone.getByRole('button', { name: 'Сохранить', exact: true }).click()
 await phone.waitForTimeout(300)
-await phone.getByRole('link', { name: 'Ещё' }).click() // на телефоне профиль — во вкладке «Ещё»
 await phone.getByRole('link', { name: 'Профиль и этапы' }).click()
 await phone.getByRole('button', { name: 'Синхронизировать сейчас' }).click()
 await phone.waitForTimeout(800)
@@ -100,15 +99,25 @@ await phone.waitForTimeout(1500)
 check('телефон получил новый вес', (await phone.getByLabel('Вес утром, кг').inputValue()) === '59,8' || (await phone.getByLabel('Вес утром, кг').inputValue()) === '59.8',
   await phone.getByLabel('Вес утром, кг').inputValue())
 const before = commits
-await phone.getByRole('link', { name: 'Ещё' }).click() // на телефоне профиль — во вкладке «Ещё»
 await phone.getByRole('link', { name: 'Профиль и этапы' }).click()
 await phone.getByRole('button', { name: 'Синхронизировать сейчас' }).click()
 await phone.waitForTimeout(800)
 check('без изменений новый коммит не создаётся', commits === before, `коммитов: ${commits}`)
-await phone.getByRole('link', { name: 'Ещё' }).click()
-await phone.getByText('☁').waitFor({ timeout: 5000 }).catch(() => {})
-const badge = await phone.locator('main').innerText()
-check('во вкладке «Ещё» видно состояние синхронизации', badge.includes('синхр.'), badge.match(/☁[^\n]*/)?.[0])
+const syncBtn = phone.getByRole('button', { name: /^Синхронизировано/ })
+await syncBtn.waitFor({ timeout: 5000 }).catch(() => {})
+const badge = (await syncBtn.getAttribute('aria-label').catch(() => null)) ?? ''
+check('кнопка с облаком показывает состояние синхронизации', badge.startsWith('Синхронизировано'), badge)
+// Без таймера: правка помечается «неотправленной» и уходит только по кнопке или при сворачивании
+await phone.getByRole('link', { name: 'Сегодня' }).click()
+await phone.getByLabel('Вес утром, кг').fill('59,5')
+await phone.waitForTimeout(400)
+const commitsBefore = commits
+await phone.waitForTimeout(1500)
+check('правка не отправляется сама по таймеру', commits === commitsBefore)
+check('кнопка показывает «есть неотправленное»', !!(await phone.getByRole('button', { name: /ещё не отправленные/ }).count()))
+await phone.getByRole('button', { name: /ещё не отправленные/ }).click()
+await phone.waitForTimeout(800)
+check('по кнопке с облаком правка ушла в GitHub', remoteDoc().tables.days.some((d) => d.weightKg === 59.5))
 await phone.screenshot({ path: 'e2e/out/sync-phone.png', fullPage: true })
 
 // 401 — ответ на неверный токен, 404 — «файла ещё нет» при первом подключении: так отвечает и настоящий GitHub.

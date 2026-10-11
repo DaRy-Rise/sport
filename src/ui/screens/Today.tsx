@@ -11,7 +11,8 @@ import { formatDuration, sleepHours, sleepMinutes } from '../../domain/sleep'
 import { GAME_LABEL, needsLightSession } from '../../domain/training'
 import type { AdaptationState, DayType } from '../../domain/types'
 import { trendOn } from '../../domain/weight'
-import { Bar, Card, DateNav, Field, NumberInput, Segmented, TriState, fmt } from '../components'
+import { Bar, Card, CategoryTitle, DateNav, Field, NumberInput, Rings, Segmented, TriState, fmt } from '../components'
+import { Icons } from '../icons'
 import { db, useCore, useDateParam, usePlan } from '../data'
 import { refreshSuggestions } from '../suggest'
 import { AdaptationTipsCard } from './Sleep'
@@ -19,10 +20,20 @@ import { AdaptationTipsCard } from './Sleep'
 function MacroRow({ label, value, target, unit, min }: { label: string; value: number; target: number; unit: string; min?: boolean }) {
   const pct = target ? value / target : 0
   return (
-    <div className="row" style={{ gap: '0.6rem' }}>
-      <span style={{ width: 90 }}>{label}</span>
-      <div style={{ flex: 1 }}><Bar pct={pct} status={pct > 1.1 && !min ? 'over' : 'ok'} /></div>
-      <span className="small nowrap" style={{ width: 130, textAlign: 'right' }}>{fmt(value)} / {min ? '≥' : ''}{target} {unit}</span>
+    <div className="macro">
+      <div className="row spread"><span>{label}</span><span className="small muted nowrap"><b className="value">{fmt(value)}</b> / {min ? '≥' : ''}{target} {unit}</span></div>
+      <Bar pct={pct} status={pct > 1.1 && !min ? 'over' : 'ok'} />
+    </div>
+  )
+}
+
+/** Подпись к кольцу: название цветом кольца, крупное значение и цель. */
+function RingStat({ label, color, value, target, unit, min }: { label: string; color: string; value: number; target: number; unit: string; min?: boolean }) {
+  const over = !min && value > target * 1.1
+  return (
+    <div className="ring-stat">
+      <span className="ring-label" style={{ color }}>{label}</span>
+      <span className="ring-value"><b className={over ? 'over' : ''}>{fmt(value)}</b><span className="muted">/{min ? '≥' : ''}{target} {unit}</span></span>
     </div>
   )
 }
@@ -58,8 +69,10 @@ export function TodayScreen() {
 
   return (
     <div>
-      <div className="row spread">
+      <div className="screen-head">
         <h1>{date === today() ? 'Сегодня' : formatDate(date, true)}</h1>
+      </div>
+      <div className="toolbar-row">
         <DateNav date={date} onChange={setDate} addDays={addDays} label={formatDate(date, true)} />
       </div>
       <div className="row" style={{ marginBottom: '0.8rem' }}>
@@ -72,7 +85,7 @@ export function TodayScreen() {
       {adaptation?.active && date === today() && <AdaptationTipsCard adaptation={adaptation} targetWake={plan.profile.targetWake} durationH={plan.profile.sleepDurationH} />}
 
       <div className="grid two">
-        <Card title="Отметки дня">
+        <Card title={<CategoryTitle icon={Icons.today} color="var(--cat-body)">Отметки дня</CategoryTitle>}>
           <div className="stack">
             <div className="row">
               <Field label="Вес утром, кг">
@@ -113,20 +126,29 @@ export function TodayScreen() {
         </Card>
 
         <div>
-          <Card title="Питание" actions={<Link className="btn small" to={`/diary?d=${date}`}>Дневник</Link>}>
-            <div className="stack">
-              <MacroRow label="Калории" value={totals.kcal.v} target={plan.macros.kcal} unit="ккал" />
-              <MacroRow label="Белок" value={totals.protein.v} target={plan.macros.protein} unit="г" />
+          <Card title={<CategoryTitle icon={Icons.foods} color="var(--ring-move)">Питание</CategoryTitle>} actions={<Link className="btn small" to={`/diary?d=${date}`}>Дневник</Link>}>
+            <div className="rings-row">
+              <Rings rings={[
+                { label: 'Калории', pct: totals.kcal.v / plan.macros.kcal, color: 'var(--ring-move)' },
+                { label: 'Белок', pct: totals.protein.v / plan.macros.protein, color: 'var(--ring-exercise)' },
+                { label: 'Клетчатка', pct: totals.fiber.v / 25, color: 'var(--ring-stand)' },
+              ]} />
+              <div className="ring-legend">
+                <RingStat label="Калории" color="var(--ring-move)" value={totals.kcal.v} target={plan.macros.kcal} unit="ккал" />
+                <RingStat label="Белок" color="var(--ring-exercise)" value={totals.protein.v} target={plan.macros.protein} unit="г" />
+                <RingStat label="Клетчатка" color="var(--ring-stand)" value={totals.fiber.v} target={25} unit="г" min />
+              </div>
+            </div>
+            <div className="stack" style={{ marginTop: '1rem' }}>
               <MacroRow label="Жиры" value={totals.fat.v} target={plan.macros.fat} unit="г" min />
               <MacroRow label="Углеводы" value={totals.carbs.v} target={plan.macros.carbs} unit="г" />
-              <MacroRow label="Клетчатка" value={totals.fiber.v} target={25} unit="г" min />
             </div>
             <p className="small" style={{ marginTop: '0.6rem' }}>
               Вечерний перекус: бюджет {budget.budget} ккал, {budget.over ? <span className="badge warn">сверх на {fmt(budget.over)}</span> : <>осталось {fmt(budget.remaining)}</>}
             </p>
             <p className="muted small">Расход {fmt(plan.tdee)} ккал ({plan.tdeeSource === 'data' ? 'по данным' : 'по формуле'}), средняя цель {fmt(plan.avgKcal)} ккал.</p>
           </Card>
-          <Card title="Тренировка" actions={<Link className="btn small" to={`/training?d=${date}`}>Неделя</Link>}>
+          <Card title={<CategoryTitle icon={Icons.training} color="var(--cat-activity)">Тренировка</CategoryTitle>} actions={<Link className="btn small" to={`/training?d=${date}`}>Неделя</Link>}>
             {workouts.length ? (
               <div className="list">
                 {workouts.map((w) => (

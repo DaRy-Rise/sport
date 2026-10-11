@@ -10,7 +10,7 @@ import {
   progressionAdvice, sessionsOf, strengthHistory,
 } from '../../domain/training'
 import type { Exercise, GameType, MovementPattern, Program, ProgramDay, ProgramExercise, Workout, WorkoutSet } from '../../domain/types'
-import { Card, ConfirmButton, Field, NumberInput, fmt } from '../components'
+import { BackLink, Card, ConfirmButton, Field, NumberInput, fmt } from '../components'
 import { deloadActive } from '../actions'
 import { db, useDateParam } from '../data'
 
@@ -61,14 +61,14 @@ function WeekView() {
 
   return (
     <div>
-      <div className="row spread">
+      <div className="screen-head">
         <h1>Тренировки</h1>
-        <div className="row">
-          <button className="btn small" onClick={() => setDate(addDays(start, -7))}>← неделя</button>
-          <span>{formatDate(start)} — {formatDate(addDays(start, 6))}</span>
-          <button className="btn small" onClick={() => setDate(addDays(start, 7))}>неделя →</button>
-          <Link className="btn small" to="/training/programs">Программы и упражнения</Link>
-        </div>
+        <Link className="btn" to="/training/programs">Программы</Link>
+      </div>
+      <div className="toolbar-row">
+        <button className="btn small icon-only" onClick={() => setDate(addDays(start, -7))} aria-label="Предыдущая неделя">‹</button>
+        <span className="toolbar-title">{formatDate(start)} — {formatDate(addDays(start, 6))}</span>
+        <button className="btn small icon-only" onClick={() => setDate(addDays(start, 7))} aria-label="Следующая неделя">›</button>
       </div>
       <p className="muted small">Дни с силовой или игрой автоматически становятся днями нагрузки — нормы питания пересчитываются.</p>
       <div className="week">
@@ -184,10 +184,8 @@ function WorkoutLog() {
 
   return (
     <div>
-      <div className="row spread">
-        <h1>{day.name} · {formatDate(w.date, true)}</h1>
-        <Link className="btn small" to={`/training?d=${w.date}`}>← неделя</Link>
-      </div>
+      <BackLink to={`/training?d=${w.date}`} label="Неделя" />
+      <h1>{day.name} · {formatDate(w.date, true)}</h1>
       {needsLightSession(hours) && w.light === undefined && (
         <div className="note warn row spread">
           <span>Прошлой ночью {fmt(hours, 1)} ч сна. Облегчить тренировку: на подход меньше, запас не меньше 3 повторов?</span>
@@ -238,7 +236,8 @@ function ExerciseChart() {
   const data = strengthHistory(sets, exId)
   return (
     <div>
-      <div className="row spread"><h1>{ex.name}</h1><Link className="btn small" to="/training">← тренировки</Link></div>
+      <BackLink to="/training" label="Тренировки" />
+      <h1>{ex.name}</h1>
       <Card title="Расчётный максимум на 1 повтор">
         <p className="muted small">По лучшему подходу каждой тренировки (формула Эпли). Нужен, чтобы видеть силу при разных весах и повторах.</p>
         {data.length ? (
@@ -340,7 +339,8 @@ function Programs() {
   if (!ready) return <p className="muted">Загрузка…</p>
   return (
     <div>
-      <div className="row spread"><h1>Программы и упражнения</h1><Link className="btn small" to="/training">← неделя</Link></div>
+      <BackLink to="/training" label="Неделя" />
+      <h1>Программы и упражнения</h1>
       {(programs ?? []).map((p) => <ProgramEditor key={p.id} program={p} exMap={exMap} />)}
       <NewExercise />
     </div>

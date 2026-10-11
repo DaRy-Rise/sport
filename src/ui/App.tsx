@@ -5,7 +5,7 @@ import { Icons } from './icons'
 import { folderStatus, manualBackupReminderDue, type FolderStatus } from '../db/backup'
 import { db } from './data'
 import { startup } from './setup'
-import { SyncBadge } from './SyncCard'
+import { SyncButton } from './SyncCard'
 import { startSyncRunner, useSyncStatus } from './sync'
 import { Wizard } from './screens/Wizard'
 import { TodayScreen } from './screens/Today'
@@ -16,58 +16,45 @@ import { SleepScreen } from './screens/Sleep'
 import { InsightsScreen } from './screens/Insights'
 import { ProfileScreen } from './screens/Profile'
 
-// primary — вкладки нижней панели на телефоне (по HIG не больше пяти, пятая — «Ещё»).
-const NAV = [
-  { to: '/', label: 'Сегодня', icon: Icons.today, primary: true },
-  { to: '/diary', label: 'Дневник', icon: Icons.diary, primary: true },
-  { to: '/training', label: 'Тренировки', icon: Icons.training, primary: true },
-  { to: '/sleep', label: 'Сон', icon: Icons.sleep, primary: true },
-  { to: '/foods', label: 'Продукты', icon: Icons.foods, primary: false },
-  { to: '/insights', label: 'Связи и обзор', icon: Icons.insights, primary: false },
-  { to: '/profile', label: 'Профиль и этапы', icon: Icons.profile, primary: false },
-] as const
-const SECONDARY = NAV.filter((n) => !n.primary)
+// Пять вкладок (по HIG — не больше пяти и без вкладки «Ещё»). Продукты открываются из Дневника,
+// профиль — круглой кнопкой справа вверху, как в «Здоровье».
+const TABS = [
+  { to: '/', label: 'Сегодня', icon: Icons.today, also: [] as string[] },
+  { to: '/diary', label: 'Дневник', icon: Icons.diary, also: ['/foods'] },
+  { to: '/training', label: 'Тренировки', icon: Icons.training, also: [] },
+  { to: '/sleep', label: 'Сон', icon: Icons.sleep, also: [] },
+  { to: '/insights', label: 'Обзор', icon: Icons.insights, also: [] },
+]
 
-function Nav({ openSuggestions }: { openSuggestions?: number }) {
+function TabBar({ openSuggestions }: { openSuggestions?: number }) {
   const { pathname } = useLocation()
-  const inMore = pathname === '/more' || SECONDARY.some((n) => pathname.startsWith(n.to))
   return (
-    <nav className="nav" aria-label="Разделы">
-      <div className="brand">Мой режим</div>
-      <SyncBadge />
-      {NAV.map((n) => (
-        <NavLink key={n.to} to={n.to} end={n.to === '/'} className={n.primary ? 'primary' : 'secondary'}>
-          <n.icon />
-          <span className="label">{n.label}</span>
-          {n.to === '/insights' && !!openSuggestions && <span className="count">{openSuggestions}</span>}
+    <nav className="tabbar glass" aria-label="Разделы">
+      {TABS.map((t) => (
+        <NavLink key={t.to} to={t.to} end={t.to === '/'}
+          className={({ isActive }) => (isActive || t.also.some((p) => pathname.startsWith(p)) ? 'tab active' : 'tab')}>
+          <t.icon />
+          <span className="label">{t.label}</span>
+          {t.to === '/insights' && !!openSuggestions && <span className="count">{openSuggestions}</span>}
         </NavLink>
       ))}
-      <NavLink to="/more" className={inMore ? 'more active' : 'more'}>
-        <Icons.more />
-        <span className="label">Ещё</span>
-        {!!openSuggestions && <span className="count">{openSuggestions}</span>}
-      </NavLink>
     </nav>
   )
 }
 
-/** «Ещё» на телефоне: остальные разделы списком, как в iOS. */
-function MoreScreen({ openSuggestions }: { openSuggestions?: number }) {
+/** Верхняя панель: на широком экране — название, вкладки по центру, действия справа; на телефоне — только действия. */
+function Toolbar({ openSuggestions }: { openSuggestions?: number }) {
   return (
-    <div>
-      <h1>Ещё</h1>
-      <div className="group">
-        {SECONDARY.map((n) => (
-          <NavLink key={n.to} to={n.to} className="cell">
-            <span className="cell-icon"><n.icon /></span>
-            <span className="cell-label">{n.label}</span>
-            {n.to === '/insights' && !!openSuggestions && <span className="count">{openSuggestions}</span>}
-            <Icons.chevron />
-          </NavLink>
-        ))}
+    <header className="toolbar">
+      <div className="toolbar-inner">
+        <span className="brand"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="26" height="26" />Мой режим</span>
+        <TabBar openSuggestions={openSuggestions} />
+        <div className="toolbar-actions">
+          <SyncButton />
+          <NavLink to="/profile" className="glass circle" aria-label="Профиль и этапы" title="Профиль и этапы"><Icons.profile /></NavLink>
+        </div>
       </div>
-      <p className="footnote"><SyncBadge /></p>
-    </div>
+    </header>
   )
 }
 
@@ -110,12 +97,12 @@ export function App() {
 
   if (started === 'loading' || profileCount === undefined) return <div className="main muted">Загрузка…</div>
   if (started !== 'ok') return <div className="main"><div className="note bad">Ошибка запуска: {started}</div></div>
-  if (profileCount === 0) return <div className="main"><Wizard /></div>
+  if (profileCount === 0) return <div className="main narrow"><Wizard /></div>
 
   return (
     <HashRouter>
       <div className="app">
-        <Nav openSuggestions={openSuggestions} />
+        <Toolbar openSuggestions={openSuggestions} />
         <main className="main">
           <BackupBanner />
           <Routes>
@@ -126,7 +113,6 @@ export function App() {
             <Route path="/sleep" element={<SleepScreen />} />
             <Route path="/insights" element={<InsightsScreen />} />
             <Route path="/profile" element={<ProfileScreen />} />
-            <Route path="/more" element={<MoreScreen openSuggestions={openSuggestions} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

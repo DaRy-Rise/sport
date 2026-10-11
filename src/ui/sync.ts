@@ -1,11 +1,12 @@
-// Фоновая синхронизация: при открытии, через 30 с после изменений, при сворачивании и возврате в приложение.
+// Синхронизация без таймеров: при открытии и возврате в приложение (забрать правки с другого устройства),
+// при сворачивании или закрытии (отправить свои) и по кнопке с облаком. Если отправка не успела — изменения
+// не теряются: при следующем открытии слияние отправит их.
 import { useSyncExternalStore } from 'react'
 import type { AppDB } from '../db/schema'
 import { connect, githubRemote, onLocalChange, syncOnce, SyncError, type ConnectResult, type SyncConfig } from '../db/sync'
 
 const CONFIG_KEY = 'sport-sync'
 const REPLACE_KEY = 'sport-sync-replace-remote'
-const AFTER_CHANGE_MS = 30_000
 
 // Настройки и токен хранятся только на этом устройстве: не в базе, не в копиях и не в GitHub.
 export function loadSyncConfig(): SyncConfig | null {
@@ -94,7 +95,6 @@ export function startSyncRunner(database: AppDB): void {
   onLocalChange(() => {
     if (!loadSyncConfig()) return
     if (!status.pending) setStatus({ pending: true })
-    schedule(AFTER_CHANGE_MS)
   })
   window.addEventListener('online', () => void syncNow())
   document.addEventListener('visibilitychange', () => {

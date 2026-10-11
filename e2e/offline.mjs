@@ -23,9 +23,10 @@ check('сервис-воркер установлен и управляет ст
 
 await context.setOffline(true)
 await page.reload()
-await page.getByRole('navigation').getByText('Продукты').waitFor()
+await page.getByRole('navigation').getByText('Дневник').waitFor()
 check('приложение открывается без сети', true)
-await page.getByRole('navigation').getByText('Продукты').click()
+await page.getByRole('navigation').getByText('Дневник').click()
+await page.getByRole('link', { name: 'Продукты', exact: true }).click()
 await page.getByPlaceholder('Поиск по названию…').fill('гречка')
 await page.getByText('Гречка (сухая)').waitFor()
 check('поиск «гречка» работает без сети', true)

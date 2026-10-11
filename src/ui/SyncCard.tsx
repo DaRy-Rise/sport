@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SyncError } from '../db/sync'
 import { ConfirmButton, Field } from './components'
+import { Icons } from './icons'
 import { connectSync, disconnectSync, loadSyncConfig, syncNow, useSyncStatus } from './sync'
 
 export function formatSyncTime(iso?: string): string {
@@ -10,12 +11,20 @@ export function formatSyncTime(iso?: string): string {
   return sameDay ? `сегодня в ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : d.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-/** Строка состояния для меню. */
-export function SyncBadge() {
+/** Кнопка синхронизации в панели: показывает состояние, по нажатию синхронизирует сразу. */
+export function SyncButton() {
   const s = useSyncStatus()
   if (!s.configured) return null
-  const text = s.state === 'syncing' ? 'синхронизация…' : s.state === 'error' ? 'синхр.: ошибка' : s.pending ? 'есть неотправленное' : `синхр. ${formatSyncTime(s.lastAt)}`
-  return <span className={`small ${s.state === 'error' ? 'badge warn' : 'muted'}`} title={s.error} style={{ padding: '0 0.6rem' }}>☁ {text}</span>
+  const label = s.state === 'syncing' ? 'Синхронизация…'
+    : s.state === 'error' ? `Ошибка синхронизации: ${s.error ?? ''}`
+    : s.pending ? 'Есть изменения, ещё не отправленные в GitHub — нажмите, чтобы отправить'
+    : `Синхронизировано ${formatSyncTime(s.lastAt)} — нажмите, чтобы обновить`
+  return (
+    <button type="button" className={`glass circle sync ${s.state}${s.pending ? ' pending' : ''}`} onClick={() => void syncNow()} aria-label={label} title={label}>
+      <Icons.cloud />
+      {(s.pending || s.state === 'error') && <span className="dot" />}
+    </button>
+  )
 }
 
 function Instructions() {
@@ -72,7 +81,7 @@ export function SyncCard({ compact = false }: { compact?: boolean }) {
         <p>Подключено к <b>{saved.owner}/{saved.repo}</b>. Последняя синхронизация: {formatSyncTime(s.lastAt)}{s.pending ? ' · есть неотправленные изменения' : ''}.</p>
         {msg && <div className="note accent small">{msg}</div>}
         {s.state === 'error' && <div className="note warn">{s.error}</div>}
-        <p className="muted small">Данные отправляются через 30 секунд после изменений и при сворачивании приложения, а забираются при открытии. GitHub хранит историю, так что это и резервная копия.</p>
+        <p className="muted small">Данные забираются при открытии приложения и при возврате в него, а отправляются, когда вы сворачиваете или закрываете приложение. В любой момент можно нажать кнопку с облаком вверху. GitHub хранит историю, так что это и резервная копия.</p>
         <div className="row">
           <button className="btn primary" disabled={s.state === 'syncing'} onClick={() => void syncNow()}>{s.state === 'syncing' ? 'Синхронизирую…' : 'Синхронизировать сейчас'}</button>
           <ConfirmButton className="btn" label="Отключить на этом устройстве" confirmLabel="Точно отключить? Данные останутся" onConfirm={disconnectSync} />

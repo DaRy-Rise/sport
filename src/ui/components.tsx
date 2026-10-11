@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 
 export function parseNum(s: string): number | undefined {
   const v = Number(s.replace(',', '.').trim())
@@ -146,4 +147,43 @@ export function DateNav(props: { date: string; onChange: (d: string) => void; ad
       <span className="muted">{props.label}</span>
     </div>
   )
+}
+
+/** Кнопка «назад», как в навигационной панели iOS: шеврон и название предыдущего экрана. */
+export function BackLink(props: { to: string; label: string }) {
+  return (
+    <Link className="back" to={props.to}>
+      <svg width="11" height="18" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 1 1 7l6 6" /></svg>
+      {props.label}
+    </Link>
+  )
+}
+
+/** Кольца в стиле «Фитнеса»: каждое — доля выполнения цели (больше 100% — кольцо замкнуто). */
+export function Rings(props: { rings: { pct: number; color: string; label: string }[]; size?: number }) {
+  const size = props.size ?? 128
+  const stroke = Math.round(size * 0.115)
+  const gap = Math.max(2, Math.round(size * 0.02))
+  return (
+    <svg className="rings" width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img"
+      aria-label={props.rings.map((r) => `${r.label}: ${Math.round(r.pct * 100)}%`).join(', ')}>
+      {props.rings.map((r, i) => {
+        const radius = size / 2 - stroke / 2 - i * (stroke + gap)
+        const c = 2 * Math.PI * radius
+        const p = Math.max(0, Math.min(1, r.pct))
+        return (
+          <g key={r.label} transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+            <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={r.color} strokeOpacity={0.22} strokeWidth={stroke} />
+            {p > 0 && <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={r.color} strokeWidth={stroke} strokeLinecap="round"
+              strokeDasharray={`${c * p} ${c}`} style={{ transition: 'stroke-dasharray 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+/** Заголовок карточки с цветной иконкой категории, как в «Здоровье». */
+export function CategoryTitle(props: { icon: () => ReactNode; color: string; children: ReactNode }) {
+  return <span className="cat" style={{ color: props.color }}><props.icon />{props.children}</span>
 }

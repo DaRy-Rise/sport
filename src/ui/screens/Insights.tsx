@@ -141,7 +141,7 @@ export function InsightsScreen() {
 
   return (
     <div>
-      <h1>Связи и обзор</h1>
+      <h1>Обзор</h1>
       <Card title="Предложения">
         {visible.length ? (
           <div className="list">{visible.map((s) => <SuggestionItem key={s.id} s={s} avgKcal={plan.avgKcal} tdee={plan.tdee} />)}</div>
@@ -149,8 +149,8 @@ export function InsightsScreen() {
       </Card>
       <Card title={`Обзор недели: ${formatDate(review.weekStart)} — ${formatDate(review.weekEnd)}`} actions={
         <>
-          <button className="btn small" onClick={() => setWeekOffset(weekOffset + 1)}>← раньше</button>
-          <button className="btn small" disabled={weekOffset <= 0} onClick={() => setWeekOffset(weekOffset - 1)}>позже →</button>
+          <button className="btn small icon-only" onClick={() => setWeekOffset(weekOffset + 1)} aria-label="Раньше">‹</button>
+          <button className="btn small icon-only" disabled={weekOffset <= 0} onClick={() => setWeekOffset(weekOffset - 1)} aria-label="Позже">›</button>
         </>
       }>
         <p><b>{reviewSummary(review)}</b></p>

@@ -7,7 +7,7 @@ import { effectivePer100, foodLabel, itemsTotals, labelComposition, type FoodsBy
 import { NUTRIENT_INFO, sumParts } from '../../domain/nutrients'
 import { searchItems } from '../../domain/search'
 import { NUTRIENT_KEYS, type Batch, type BatchIngredient, type Food, type MealTemplate, type Measure, type PortionItem, type TemplateVariant } from '../../domain/types'
-import { Card, ConfirmButton, Dialog, Field, NumberInput, Tabs, fmt } from '../components'
+import { BackLink, Card, ConfirmButton, Dialog, Field, NumberInput, Tabs, fmt } from '../components'
 import { db, useFoodsMap } from '../data'
 import { FoodPicker } from '../FoodPicker'
 import { Summary } from '../Summary'
@@ -435,6 +435,7 @@ export function FoodsScreen() {
   if (!foods) return <p className="muted">Загрузка…</p>
   return (
     <div>
+      <BackLink to="/diary" label="Дневник" />
       <h1>Продукты</h1>
       <Tabs value={tab} onChange={setTab} tabs={[
         { value: 'foods', label: 'Продукты' }, { value: 'templates', label: 'Шаблоны' },

@@ -10,7 +10,8 @@ import {
 } from '../../domain/sleep'
 import { reviseProfile } from '../../domain/phases'
 import type { AdaptationState, Profile, SleepNight } from '../../domain/types'
-import { Card, ConfirmButton, Field, NumberInput, Segmented, fmt } from '../components'
+import { Card, CategoryTitle, ConfirmButton, Field, NumberInput, Segmented, fmt } from '../components'
+import { Icons } from '../icons'
 import { db, useCore } from '../data'
 
 /** Минуты для графика: время до полудня считается следующими сутками (отбой после полуночи). */
@@ -111,7 +112,7 @@ export function SleepScreen() {
     <div>
       <h1>Сон</h1>
       <div className="grid two">
-        <Card title="Записать ночь">
+        <Card title={<CategoryTitle icon={Icons.sleep} color="var(--cat-sleep)">Записать ночь</CategoryTitle>}>
           <div className="row">
             <Field label="Дата подъёма"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
             <Field label="Отбой"><input type="time" value={bed} onChange={(e) => setBed(e.target.value)} /></Field>
@@ -125,7 +126,7 @@ export function SleepScreen() {
           <button className="btn primary" onClick={save}>Сохранить</button>
           {msg && <p className="small" style={{ marginTop: '0.5rem' }}>{msg}</p>}
         </Card>
-        <Card title="Режим">
+        <Card title={<CategoryTitle icon={Icons.today} color="var(--cat-sleep)">Режим</CategoryTitle>}>
           <SleepTargetEditor profile={p} />
           <p>Цель: подъём <b>{p.targetWake}</b> (в выходные до {fromMinutes(toMinutes(p.targetWake) + 60)}), отбой <b>{targetBed}</b> ({p.sleepDurationH} ч + 15 мин на засыпание), «кухня закрыта» в {kitchenCloseTarget(p)}.</p>
           <p className="small">

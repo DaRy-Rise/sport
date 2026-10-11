@@ -42,7 +42,7 @@ const text = (page) => page.locator('main').innerText()
   check('вес сохраняется за дату', (await page.evaluate(() => window.__db.days.get('2026-10-11')))?.weightKg === 60)
 
   // Профиль: хранилище и автокопия
-  await page.getByRole('navigation').getByText('Профиль и этапы').click()
+  await page.getByRole('link', { name: 'Профиль и этапы' }).click()
   await page.getByText('Хранилище и резервные копии').waitFor()
   t = await text(page)
   check('профиль показывает статус хранилища', /хранилище (не )?постоянное|не сообщает/.test(t), t.match(/хранилище[^\n]*/)?.[0])
@@ -60,7 +60,9 @@ const text = (page) => page.locator('main').innerText()
   await shot(page, 'profile')
 
   // Продукты: упаковка с аналогом
-  await page.getByRole('navigation').getByText('Продукты').click()
+  // Продукты открываются из Дневника
+  await page.getByRole('navigation').getByText('Дневник').click()
+  await page.getByRole('link', { name: 'Продукты', exact: true }).click()
   await page.getByRole('button', { name: '+ Продукт в упаковке' }).click()
   const dlg = page.getByRole('dialog')
   await dlg.getByLabel('Название').fill('Карпаччо из индейки')
@@ -121,7 +123,7 @@ const text = (page) => page.locator('main').innerText()
 
   // Тренировка 11.10
   await page.getByRole('navigation').getByText('Тренировки').click()
-  await page.getByText('Программы и упражнения').waitFor()
+  await page.getByRole('link', { name: 'Программы', exact: true }).waitFor()
   await page.locator('.week .day').nth(6).getByRole('button', { name: '+ A' }).click()
   await page.getByText('Тренировка A · вс, 11 октября').waitFor()
   const legPress = page.locator('.item', { hasText: 'Жим ногами' })
@@ -185,7 +187,7 @@ const text = (page) => page.locator('main').innerText()
   check('целевой подъём меняется на экране «Сон»: 07:20 → отбой 23:05', prof?.targetWake === '07:20' && t.includes('отбой 23:05'))
   await shot(page, 'sleep')
 
-  for (const [label, heading] of [['Связи и обзор', 'Связи в ваших данных'], ['Сегодня', 'Отметки дня']]) {
+  for (const [label, heading] of [['Обзор', 'Связи в ваших данных'], ['Сегодня', 'Отметки дня']]) {
     await page.getByRole('navigation').getByText(label).click()
     await page.getByText(heading).first().waitFor()
   }
@@ -231,7 +233,7 @@ const text = (page) => page.locator('main').innerText()
   const sugg = await page.evaluate(() => window.__db.suggestions.toArray())
   check('плато после калибровки → предложение снизить калории', sugg.some((s) => s.kind === 'kcal-down' && s.status === 'open'), sugg.map((s) => s.kind).join(', '))
 
-  await page.getByRole('navigation').getByText('Связи и обзор').click()
+  await page.getByRole('navigation').getByText('Обзор').click()
   await page.getByText('Связи в ваших данных').waitFor()
   let t = await text(page)
   check('обзор недели сформирован', /Обзор недели: \d+ \S+ — \d+ \S+/.test(t) && t.includes('тренировки'), t.match(/тренд[^\n]*/)?.[0])
@@ -244,7 +246,7 @@ const text = (page) => page.locator('main').innerText()
   if (await q.isVisible()) await page.getByRole('button', { name: 'Да — снизить калории' }).click()
   await page.waitForTimeout(400)
 
-  await page.getByRole('navigation').getByText('Профиль и этапы').click()
+  await page.getByRole('link', { name: 'Профиль и этапы' }).click()
   await page.getByText('История этапов').waitFor()
   t = await text(page)
   check('принятая корректировка видна в нормах', t.includes('поправка -125'), t.match(/Средняя цель[^\n]*/)?.[0])
