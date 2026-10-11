@@ -139,10 +139,10 @@ export function ConfirmButton(props: { label: string; confirmLabel?: string; onC
 
 export function DateNav(props: { date: string; onChange: (d: string) => void; addDays: (d: string, n: number) => string; label: string }) {
   return (
-    <div className="row">
-      <button className="btn small" onClick={() => props.onChange(props.addDays(props.date, -1))} aria-label="Предыдущий день">←</button>
+    <div className="row datenav">
+      <button className="btn small" onClick={() => props.onChange(props.addDays(props.date, -1))} aria-label="Предыдущий день"><svg width="9" height="15" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 1 1 7l6 6" /></svg></button>
       <input type="date" value={props.date} onChange={(e) => e.target.value && props.onChange(e.target.value)} />
-      <button className="btn small" onClick={() => props.onChange(props.addDays(props.date, 1))} aria-label="Следующий день">→</button>
+      <button className="btn small" onClick={() => props.onChange(props.addDays(props.date, 1))} aria-label="Следующий день"><svg width="9" height="15" viewBox="0 0 8 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m1 1 6 6-6 6" /></svg></button>
       <span className="muted">{props.label}</span>
     </div>
   )

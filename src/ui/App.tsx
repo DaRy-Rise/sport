@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router'
+import { HashRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router'
+import { Icons } from './icons'
 import { folderStatus, manualBackupReminderDue, type FolderStatus } from '../db/backup'
 import { db } from './data'
 import { startup } from './setup'
@@ -15,15 +16,60 @@ import { SleepScreen } from './screens/Sleep'
 import { InsightsScreen } from './screens/Insights'
 import { ProfileScreen } from './screens/Profile'
 
+// primary — вкладки нижней панели на телефоне (по HIG не больше пяти, пятая — «Ещё»).
 const NAV = [
-  ['/', 'Сегодня'],
-  ['/diary', 'Дневник'],
-  ['/foods', 'Продукты'],
-  ['/training', 'Тренировки'],
-  ['/sleep', 'Сон'],
-  ['/insights', 'Связи и обзор'],
-  ['/profile', 'Профиль и этапы'],
+  { to: '/', label: 'Сегодня', icon: Icons.today, primary: true },
+  { to: '/diary', label: 'Дневник', icon: Icons.diary, primary: true },
+  { to: '/training', label: 'Тренировки', icon: Icons.training, primary: true },
+  { to: '/sleep', label: 'Сон', icon: Icons.sleep, primary: true },
+  { to: '/foods', label: 'Продукты', icon: Icons.foods, primary: false },
+  { to: '/insights', label: 'Связи и обзор', icon: Icons.insights, primary: false },
+  { to: '/profile', label: 'Профиль и этапы', icon: Icons.profile, primary: false },
 ] as const
+const SECONDARY = NAV.filter((n) => !n.primary)
+
+function Nav({ openSuggestions }: { openSuggestions?: number }) {
+  const { pathname } = useLocation()
+  const inMore = pathname === '/more' || SECONDARY.some((n) => pathname.startsWith(n.to))
+  return (
+    <nav className="nav" aria-label="Разделы">
+      <div className="brand">Мой режим</div>
+      <SyncBadge />
+      {NAV.map((n) => (
+        <NavLink key={n.to} to={n.to} end={n.to === '/'} className={n.primary ? 'primary' : 'secondary'}>
+          <n.icon />
+          <span className="label">{n.label}</span>
+          {n.to === '/insights' && !!openSuggestions && <span className="count">{openSuggestions}</span>}
+        </NavLink>
+      ))}
+      <NavLink to="/more" className={inMore ? 'more active' : 'more'}>
+        <Icons.more />
+        <span className="label">Ещё</span>
+        {!!openSuggestions && <span className="count">{openSuggestions}</span>}
+      </NavLink>
+    </nav>
+  )
+}
+
+/** «Ещё» на телефоне: остальные разделы списком, как в iOS. */
+function MoreScreen({ openSuggestions }: { openSuggestions?: number }) {
+  return (
+    <div>
+      <h1>Ещё</h1>
+      <div className="group">
+        {SECONDARY.map((n) => (
+          <NavLink key={n.to} to={n.to} className="cell">
+            <span className="cell-icon"><n.icon /></span>
+            <span className="cell-label">{n.label}</span>
+            {n.to === '/insights' && !!openSuggestions && <span className="count">{openSuggestions}</span>}
+            <Icons.chevron />
+          </NavLink>
+        ))}
+      </div>
+      <p className="footnote"><SyncBadge /></p>
+    </div>
+  )
+}
 
 function BackupBanner() {
   const [status, setStatus] = useState<FolderStatus | null>(null)
@@ -69,16 +115,7 @@ export function App() {
   return (
     <HashRouter>
       <div className="app">
-        <nav className="nav" aria-label="Разделы">
-          <div className="brand">Мой режим</div>
-          <SyncBadge />
-          {NAV.map(([to, label]) => (
-            <NavLink key={to} to={to} end={to === '/'}>
-              {label}
-              {to === '/insights' && !!openSuggestions && <span className="badge warn">{openSuggestions}</span>}
-            </NavLink>
-          ))}
-        </nav>
+        <Nav openSuggestions={openSuggestions} />
         <main className="main">
           <BackupBanner />
           <Routes>
@@ -89,6 +126,7 @@ export function App() {
             <Route path="/sleep" element={<SleepScreen />} />
             <Route path="/insights" element={<InsightsScreen />} />
             <Route path="/profile" element={<ProfileScreen />} />
+            <Route path="/more" element={<MoreScreen openSuggestions={openSuggestions} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
