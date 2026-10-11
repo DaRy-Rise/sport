@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.log
+.vite/
+data/fdc-raw/
+e2e/out/
+
+# План и требования с личными данными — только локально, в публичный репозиторий не идут.
+openspec/
